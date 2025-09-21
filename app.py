@@ -57,12 +57,58 @@ def read_pdf_from_bytes(file_bytes):
     except Exception as e:
         return f"[ERROR] Could not extract PDF text: {e}"
 
-# -------- Load models / data once ----------
-judgment_texts = download_and_load("1vAA2spJ-AzHhBqs-gl6gL5_wDk22a5VW", "judgment_texts.pkl")
-model = download_and_load("1-pje6HUuprf19yGIbJQA7MNwPNGqTkF0", "model.pkl")
-case_names = download_and_load("1_IZQmTuucallXvQaeLM8P9q0co79_JD6", "case_names.pkl")
-embeddings = download_and_load("1molCaZLasdsSMqqskRIcHnmnpQWfAupF", "embeddings.pkl")
-modellog = download_and_load("1XALJYnXhZB9gXdjAgz8y_I852CpYt-eg", "modellog.pkl")
+# -------- Global variables for lazy loading ----------
+_models_loaded = False
+_judgment_texts = None
+_model = None
+_case_names = None
+_embeddings = None
+_modellog = None
+
+def load_models():
+    """Load ML models only when needed (lazy loading)"""
+    global _models_loaded, _judgment_texts, _model, _case_names, _embeddings, _modellog
+
+    if _models_loaded:
+        return
+
+    try:
+        print("[INFO] Loading ML models...")
+        _judgment_texts = download_and_load("1vAA2spJ-AzHhBqs-gl6gL5_wDk22a5VW", "judgment_texts.pkl")
+        _model = download_and_load("1-pje6HUuprf19yGIbJQA7MNwPNGqTkF0", "model.pkl")
+        _case_names = download_and_load("1_IZQmTuucallXvQaeLM8P9q0co79_JD6", "case_names.pkl")
+        _embeddings = download_and_load("1molCaZLasdsSMqqskRIcHnmnpQWfAupF", "embeddings.pkl")
+        _modellog = download_and_load("1XALJYnXhZB9gXdjAgz8y_I852CpYt-eg", "modellog.pkl")
+        _models_loaded = True
+        print("[INFO] All ML models loaded successfully")
+    except Exception as e:
+        print(f"[ERROR] Failed to load ML models: {str(e)}")
+        raise e
+
+def get_judgment_texts():
+    if not _models_loaded:
+        load_models()
+    return _judgment_texts
+
+def get_model():
+    if not _models_loaded:
+        load_models()
+    return _model
+
+def get_case_names():
+    if not _models_loaded:
+        load_models()
+    return _case_names
+
+def get_embeddings():
+    if not _models_loaded:
+        load_models()
+    return _embeddings
+
+def get_modellog():
+    if not _models_loaded:
+        load_models()
+    return _modellog
 
 # -------- Initialize Gemini AI ----------
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
@@ -293,6 +339,15 @@ def get_legal_explanation(question, context_chunks, max_retries=3):
     }
 
 # -------- Routes ----------
+@app.route("/health", methods=["GET"])
+def health():
+    """Health check endpoint that doesn't require ML models"""
+    return jsonify({
+        "status": "healthy",
+        "models_loaded": _models_loaded,
+        "message": "App is running. ML models load on-demand."
+    })
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     # Prevent caching to ensure fresh page loads
@@ -347,8 +402,14 @@ def index():
         start_index = input_text.find("JUDGMENT")
         text = input_text[start_index:] if start_index != -1 else input_text
 
-        # predicted category
+        # Load models only when needed
         try:
+            modellog = get_modellog()
+            model = get_model()
+            case_names = get_case_names()
+            embeddings = get_embeddings()
+            judgment_texts = get_judgment_texts()
+
             predicted_category = modellog.predict([text])[0]
         except Exception as e:
             return f"❌ Error in category prediction: {str(e)}", 500
