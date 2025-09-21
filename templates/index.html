@@ -1,0 +1,2637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Judgment Classifier</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --text-color: #1a202c;
+            --text-secondary: #4a5568;
+            --primary-accent: #3498db;
+            --secondary-accent: #2980b9;
+            --border-color: #e2e8f0;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --bg-gradient-light: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --bg-gradient-dark: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            --success-color: #48bb78;
+            --success-bg: rgba(72, 187, 120, 0.1);
+            --success-border: rgba(72, 187, 120, 0.2);
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: var(--bg-gradient-light);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+            transition: background 0.5s ease, color 0.3s ease;
+            line-height: 1.6;
+        }
+
+        body.dark-mode {
+            background: var(--bg-gradient-dark);
+        }
+
+        h1, h2, h3, label, p {
+            color: var(--text-color);
+            transition: color 0.5s ease-in-out;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        label {
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        textarea, input[type="file"] {
+            border-radius: 1rem;
+            transition: all 0.3s ease-in-out;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+            padding: 1rem;
+        }
+
+        textarea:focus, input[type="file"]:focus {
+            outline: none;
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.3);
+        }
+
+        .or-divider {
+            color: var(--text-color);
+            opacity: 0.5;
+            font-weight: 500;
+        }
+
+        .or-divider span {
+            background-color: var(--border-color);
+            height: 2px;
+            transition: background-color 0.5s ease-in-out;
+        }
+
+        .submit-button {
+            background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
+            color: white;
+            border-radius: 1.25rem;
+            padding: 1.25rem 2rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            transition: transform 0.2s ease, box-shadow 0.3s ease, background 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .submit-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        .submit-button[disabled] {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .result-section {
+            border-top: 2px dashed var(--border-color);
+            padding-top: 2rem;
+            margin-top: 2rem;
+            animation: slideInUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        .list-item {
+            background-color: var(--bg-color);
+            border-radius: 1.25rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.5s ease-in-out;
+            padding: 1.5rem;
+        }
+        .list-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .list-item p {
+            word-wrap: break-word;
+            margin-bottom: 0.5rem;
+        }
+
+        .list-item p b {
+            font-weight: 700;
+            margin-right: 0.5rem;
+            white-space: nowrap;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Scroll-triggered animations */
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .scroll-reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .scroll-reveal.delay-100 {
+            transition-delay: 0.1s;
+        }
+
+        .scroll-reveal.delay-200 {
+            transition-delay: 0.2s;
+        }
+
+        .scroll-reveal.delay-300 {
+            transition-delay: 0.3s;
+        }
+
+        /* Advanced button interactions */
+        .btn-magnetic {
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .btn-magnetic:hover {
+            transform: translateY(-2px) scale(1.02);
+        }
+
+        /* Ripple effect */
+        .ripple {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ripple::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .ripple:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        /* Glow effects */
+        .glow-on-hover {
+            transition: all 0.3s ease;
+        }
+
+        .glow-on-hover:hover {
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+        }
+
+        /* Morphing shapes */
+        .morphing-bg {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            background-size: 400% 400%;
+            animation: morphing 8s ease infinite;
+        }
+
+        @keyframes morphing {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Interactive progress bars */
+        .progress-animated {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-animated::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: progressShine 2s infinite;
+        }
+
+        @keyframes progressShine {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        /* Floating action elements */
+        .floating-element {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Loading spinner animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Pulse animation for status indicator */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Enhanced Loading States */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin-enhanced 1s ease-in-out infinite;
+        }
+
+        /* Custom Search Icon */
+        .search-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            position: relative;
+            background: currentColor;
+            border-radius: 50%;
+        }
+
+        .search-icon::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 3px;
+            height: 8px;
+            border: solid currentColor;
+            border-width: 0 2px 2px 0;
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+
+        .search-icon::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 6px;
+            width: 6px;
+            height: 6px;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            transform: translateY(-50%);
+        }
+
+        .search-icon.small {
+            width: 16px;
+            height: 16px;
+        }
+
+        .search-icon.small::after {
+            right: 4px;
+            width: 4px;
+            height: 4px;
+        }
+
+        .search-icon.medium {
+            width: 24px;
+            height: 24px;
+        }
+
+        .search-icon.large {
+            width: 28px;
+            height: 28px;
+        }
+
+        @keyframes spin-enhanced {
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--border-color);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-accent), var(--secondary-accent));
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.processing {
+            animation: progress-pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes progress-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, var(--border-color) 25%, rgba(255, 255, 255, 0.5) 50%, var(--border-color) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 8px;
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-text {
+            height: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 4px;
+        }
+
+        .skeleton-title {
+            height: 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 6px;
+        }
+
+        .skeleton-card {
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+
+        /* Expandable Preview Styles */
+        .case-preview-container {
+            position: relative;
+            max-height: 120px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .case-preview-container.expanded {
+            max-height: 500px;
+        }
+
+        .preview-fade {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: linear-gradient(to top, var(--card-bg), transparent);
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .case-preview-container.expanded .preview-fade {
+            opacity: 0;
+        }
+
+        .expand-btn {
+            background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 8px;
+            box-shadow: 0 2px 6px rgba(52, 152, 219, 0.3);
+        }
+
+        .expand-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+        }
+
+        .highlight-keyword {
+            background: rgba(255, 235, 59, 0.3);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 1200px) {
+            /* Hide fixed sidebar and adjust main content and footer */
+            div[style*="position: fixed"] {
+                display: none;
+            }
+
+            div[style*="margin-right: 320px"] {
+                margin-right: 0 !important;
+            }
+
+            div[style*="margin-top: 60px; margin-right: 320px"] {
+                margin-right: 0 !important;
+            }
+
+            /* Add justice image to top of main content on smaller screens */
+            div[style*="flex: 3"]:before {
+                content: '';
+                display: block;
+                width: 100px;
+                height: 100px;
+                background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
+                border-radius: 16px;
+                margin: 0 auto 20px;
+                background-image: url('/static/92-922917_scales-of-justice-symbol-of-indian-judiciary-hd.png');
+                background-size: cover;
+                background-position: center;
+            }
+        }
+
+        /* Fancy Theme Toggle Styles */
+        .toggle-cont {
+            --primary: #54a8fc;
+            --light: #d9d9d9;
+            --dark: #121212;
+            --gray: #414344;
+
+            position: relative;
+            z-index: 10;
+
+            width: fit-content;
+            height: 20px;
+
+            border-radius: 9999px;
+        }
+
+        .toggle-cont .toggle-input {
+            display: none;
+        }
+
+        .toggle-cont .toggle-label {
+            --gap: 2px;
+            --width: 20px;
+
+            cursor: pointer;
+
+            position: relative;
+            display: inline-block;
+
+            padding: 0.3rem;
+            width: calc((var(--width) + var(--gap)) * 2);
+            height: 100%;
+            background-color: var(--dark);
+
+            border: 1px solid #777777;
+            border-bottom: 0;
+
+            border-radius: 9999px;
+            box-sizing: content-box;
+            transition: all 0.3s ease-in-out;
+        }
+        .toggle-label::before {
+            content: "";
+
+            position: absolute;
+            z-index: -10;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+
+            width: calc(100% + 1.5rem);
+            height: calc(100% + 1.5rem);
+            background-color: var(--gray);
+
+            border: 1px solid #777777;
+            border-bottom: 0;
+            border-radius: 9999px;
+
+            transition: all 0.3s ease-in-out;
+        }
+        .toggle-label::after {
+            content: "";
+
+            position: absolute;
+            z-index: -10;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(
+                circle at 50% -100%,
+                rgb(58, 155, 252) 0%,
+                rgba(12, 12, 12, 1) 80%
+            );
+
+            border-radius: 9999px;
+        }
+
+        .toggle-cont .toggle-label .cont-icon {
+            position: relative;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            position: relative;
+            width: var(--width);
+            height: 20px;
+            background-image: radial-gradient(
+                circle at 50% 0%,
+                #666666 0%,
+                var(--gray) 100%
+            );
+
+            border: 1px solid #aaaaaa;
+            border-bottom: 0;
+            border-radius: 9999px;
+            box-shadow: inset 0 -0.15rem 0.15rem var(--primary),
+                inset 0 0 0.5rem 0.75rem var(--second);
+
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .cont-icon {
+            overflow: clip;
+            position: relative;
+        }
+
+        .cont-icon .sparkle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+
+            display: block;
+
+            width: calc(var(--width) * 1px);
+            aspect-ratio: 1;
+            background-color: var(--light);
+
+            border-radius: 50%;
+            transform-origin: 50% 50%;
+            rotate: calc(1deg * var(--deg));
+            transform: translate(-50%, -50%);
+            animation: sparkle calc(100s / var(--duration)) linear
+                calc(0s / var(--duration)) infinite;
+        }
+
+        @keyframes sparkle {
+            to {
+                width: calc(var(--width) * 0.5px);
+                transform: translate(2000%, -50%);
+            }
+        }
+
+        .cont-icon .icon {
+            width: 0.8rem;
+            fill: var(--light);
+        }
+
+        .toggle-cont:has(.toggle-input:checked) {
+            --checked: true;
+        }
+
+        @container style(--checked: true) {
+            .toggle-cont .toggle-label {
+                background-color: #41434400;
+
+                border: 1px solid #3d6970;
+                border-bottom: 0;
+            }
+
+            .toggle-cont .toggle-label::before {
+                box-shadow: 0 1rem 2.5rem -2rem #0080ff;
+            }
+
+            .toggle-cont .toggle-label .cont-icon {
+                overflow: visible;
+
+                background-image: radial-gradient(
+                    circle at 50% 0%,
+                    #045ab1 0%,
+                    var(--primary) 100%
+                );
+
+                border: 1px solid var(--primary);
+                border-bottom: 0;
+
+                transform: translateX(calc((var(--gap) * 2) + 100%)) rotate(-225deg);
+            }
+
+            .toggle-cont .toggle-label .cont-icon .sparkle {
+                z-index: -10;
+
+                width: calc(var(--width) * 1.5px);
+                background-color: #acacac;
+
+                animation: sparkle calc(100s / var(--duration)) linear
+                    calc(10s / var(--duration)) infinite;
+            }
+
+            @keyframes sparkle {
+                to {
+                    width: calc(var(--width) * 1px);
+                    transform: translate(5000%, -50%);
+                }
+            }
+        }
+
+        /* File Upload Area Styling */
+        #selected-file-name {
+            background: var(--success-bg);
+            border: 1px solid var(--success-border);
+            border-radius: 12px;
+            padding: 8px 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        #file-upload-area.file-selected {
+            border-color: var(--success-color);
+            background: linear-gradient(135deg, var(--card-bg), rgba(72, 187, 120, 0.05));
+        }
+
+        /* Custom Loading Animation - Hand Tapping */
+        .hand-loading {
+            --skin-color: #E4C560;
+            --tap-speed: 0.6s;
+            --tap-stagger: 0.1s;
+            position: relative;
+            width: 80px;
+            height: 60px;
+            margin: 0 auto;
+            display: none;
+        }
+
+        .hand-loading.show {
+            display: block;
+        }
+
+        .hand-loading:before {
+            content: '';
+            display: block;
+            width: 180%;
+            height: 75%;
+            position: absolute;
+            top: 70%;
+            right: 20%;
+            background-color: black;
+            border-radius: 40px 10px;
+            filter: blur(10px);
+            opacity: 0.3;
+        }
+
+        .palm {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: var(--skin-color);
+            border-radius: 10px 40px;
+        }
+
+        .thumb {
+            position: absolute;
+            width: 120%;
+            height: 38px;
+            background-color: var(--skin-color);
+            bottom: -18%;
+            right: 1%;
+            transform-origin: calc(100% - 20px) 20px;
+            transform: rotate(-20deg);
+            border-radius: 30px 20px 20px 10px;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+            border-left: 2px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .thumb:after {
+            width: 20%;
+            height: 60%;
+            content: '';
+            background-color: rgba(255, 255, 255, 0.3);
+            position: absolute;
+            bottom: -8%;
+            left: 5px;
+            border-radius: 60% 10% 10% 30%;
+            border-right: 2px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .finger {
+            position: absolute;
+            width: 80%;
+            height: 35px;
+            background-color: var(--skin-color);
+            bottom: 32%;
+            right: 64%;
+            transform-origin: 100% 20px;
+            animation-duration: calc(var(--tap-speed) * 2);
+            animation-timing-function: ease-in-out;
+            animation-iteration-count: infinite;
+            transform: rotate(10deg);
+        }
+
+        .finger:before {
+            content: '';
+            position: absolute;
+            width: 140%;
+            height: 30px;
+            background-color: var(--skin-color);
+            bottom: 8%;
+            right: 65%;
+            transform-origin: calc(100% - 20px) 20px;
+            transform: rotate(-60deg);
+            border-radius: 20px;
+        }
+
+        .finger:nth-child(1) {
+            animation-delay: 0;
+            filter: brightness(70%);
+            animation-name: tap-upper-1;
+        }
+
+        .finger:nth-child(2) {
+            animation-delay: var(--tap-stagger);
+            filter: brightness(80%);
+            animation-name: tap-upper-2;
+        }
+
+        .finger:nth-child(3) {
+            animation-delay: calc(var(--tap-stagger) * 2);
+            filter: brightness(90%);
+            animation-name: tap-upper-3;
+        }
+
+        .finger:nth-child(4) {
+            animation-delay: calc(var(--tap-stagger) * 3);
+            filter: brightness(100%);
+            animation-name: tap-upper-4;
+        }
+
+        @keyframes tap-upper-1 {
+            0%, 50%, 100% {
+                transform: rotate(10deg) scale(0.4);
+            }
+            40% {
+                transform: rotate(50deg) scale(0.4);
+            }
+        }
+
+        @keyframes tap-upper-2 {
+            0%, 50%, 100% {
+                transform: rotate(10deg) scale(0.6);
+            }
+            40% {
+                transform: rotate(50deg) scale(0.6);
+            }
+        }
+
+        @keyframes tap-upper-3 {
+            0%, 50%, 100% {
+                transform: rotate(10deg) scale(0.8);
+            }
+            40% {
+                transform: rotate(50deg) scale(0.8);
+            }
+        }
+
+        @keyframes tap-upper-4 {
+            0%, 50%, 100% {
+                transform: rotate(10deg) scale(1);
+            }
+            40% {
+                transform: rotate(50deg) scale(1);
+            }
+        }
+
+        /* Case Detail Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999 !important; /* Higher z-index */
+            padding: 1rem;
+        }
+
+        .modal-overlay.show {
+            display: flex !important;
+        }
+
+        /* Ensure modal is always visible when shown */
+        #case-modal.show {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* Additional modal visibility fixes */
+        .modal-overlay.show {
+            display: flex !important;
+            z-index: 9999 !important;
+        }
+
+        .modal-content {
+            position: relative;
+            z-index: 10000 !important;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+            max-width: 900px;
+            max-height: 90vh;
+            width: 100%;
+            overflow: hidden;
+            animation: modalSlideIn 0.3s ease-out;
+            border: 1px solid var(--border-color);
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 2rem 2rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            min-height: 60px;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin: 0;
+            flex: 1;
+            word-wrap: break-word;
+            word-break: break-word;
+            hyphens: auto;
+            line-height: 1.3;
+            max-width: calc(100% - 50px);
+            overflow-wrap: break-word;
+            white-space: normal;
+            align-self: flex-start;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: var(--text-color);
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+            padding: 0.5rem;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            opacity: 1;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-body {
+            padding: 1.5rem 2rem;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .case-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-color);
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .meta-item {
+            text-align: center;
+        }
+
+        .meta-label {
+            font-size: 0.9rem;
+            color: var(--text-color);
+            opacity: 0.7;
+            margin-bottom: 0.25rem;
+        }
+
+        .meta-value {
+            font-weight: 600;
+            color: var(--text-color);
+            font-size: 1.1rem;
+        }
+
+        .case-content {
+            line-height: 1.7;
+            color: var(--text-color);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .case-content p {
+            margin-bottom: 1rem;
+        }
+
+        .modal-actions {
+            padding: 1rem 2rem 2rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: 1px solid var(--border-color);
+            background: var(--bg-color);
+            color: var(--text-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .modal-btn.primary {
+            background: var(--primary-accent);
+            color: white;
+            border-color: var(--primary-accent);
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            div[style*="max-width: 1200px"] {
+                padding: 10px;
+            }
+
+            div[style*="flex: 3"] {
+                padding: 25px !important;
+            }
+
+            h1 {
+                font-size: 2.2rem !important;
+            }
+
+            div[style*="flex: 3"]:before {
+                width: 80px !important;
+                height: 80px !important;
+            }
+
+            /* Adjust footer for mobile */
+            div[style*="text-align: center; margin-top: 60px"] {
+                margin-top: 30px !important;
+                padding: 20px 15px !important;
+            }
+
+            /* Enhanced Mobile Experience */
+            .submit-button {
+                font-size: 1rem !important;
+                padding: 16px 20px !important;
+            }
+
+            .list-item {
+                padding: 1rem !important;
+            }
+
+            .case-title {
+                font-size: 1.1rem !important;
+                line-height: 1.4 !important;
+            }
+
+            .view-details-btn {
+                padding: 10px 16px !important;
+                font-size: 0.9rem !important;
+            }
+
+            /* Touch-friendly buttons */
+            .expand-btn {
+                min-height: 44px;
+                padding: 12px 16px !important;
+            }
+
+            .modal-btn {
+                min-height: 48px;
+                padding: 12px 20px !important;
+                font-size: 1rem !important;
+            }
+
+            /* Better mobile spacing */
+            .case-meta {
+                grid-template-columns: 1fr !important;
+                gap: 0.75rem !important;
+            }
+
+            .modal-header {
+                padding: 1.5rem 1.5rem 1rem !important;
+                min-height: 50px !important;
+            }
+
+            .modal-title {
+                font-size: 1.2rem !important;
+                line-height: 1.4 !important;
+                max-width: calc(100% - 60px) !important;
+            }
+
+            .modal-body {
+                padding: 1rem 1.5rem !important;
+            }
+
+            /* Mobile-friendly preview containers */
+            .case-preview-container {
+                max-height: 100px !important;
+            }
+
+            .case-preview-container.expanded {
+                max-height: 300px !important;
+            }
+
+            /* Better mobile form elements */
+            textarea, input[type="file"] {
+                font-size: 16px !important; /* Prevents zoom on iOS */
+                padding: 1rem !important;
+            }
+
+            /* Mobile sidebar adjustments */
+            div[style*="position: fixed"] {
+                position: relative !important;
+                width: 100% !important;
+                max-width: none !important;
+                margin: 20px 0 0 0 !important;
+            }
+
+            /* Mobile layout improvements */
+            div[style*="display: flex; gap: 30px"] {
+                flex-direction: column !important;
+            }
+
+            div[style*="flex: 3"] {
+                margin-right: 0 !important;
+            }
+
+            /* Better mobile typography */
+            .or-divider {
+                font-size: 0.9rem !important;
+            }
+
+            /* Mobile-friendly loading states */
+            .progress-bar {
+                height: 6px !important;
+            }
+
+            .loading-spinner {
+                width: 24px !important;
+                height: 24px !important;
+            }
+
+            /* Touch-friendly interactions */
+            .case-title, .view-details-btn, .expand-btn {
+                -webkit-tap-highlight-color: rgba(52, 152, 219, 0.2);
+                tap-highlight-color: rgba(52, 152, 219, 0.2);
+            }
+
+            /* Better mobile scrolling */
+            .modal-body {
+                max-height: 50vh !important;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            /* Mobile-specific button improvements */
+            button {
+                min-height: 44px;
+                touch-action: manipulation;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 480px) {
+            body {
+                padding: 0.5rem !important;
+            }
+
+            h1 {
+                font-size: 1.8rem !important;
+            }
+
+            .submit-button {
+                font-size: 0.95rem !important;
+                padding: 14px 18px !important;
+            }
+
+            .modal-title {
+                font-size: 1.1rem !important;
+            }
+
+            .case-title {
+                font-size: 1rem !important;
+            }
+
+            /* Compact mobile layout */
+            .list-item {
+                padding: 0.75rem !important;
+            }
+
+            .modal-header, .modal-body {
+                padding: 1rem !important;
+            }
+
+            /* Mobile search icon adjustments */
+            .search-icon {
+                width: 18px !important;
+                height: 18px !important;
+            }
+
+            .search-icon.medium {
+                width: 20px !important;
+                height: 20px !important;
+            }
+
+            .search-icon.small {
+                width: 14px !important;
+                height: 14px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div style="max-width: 1200px; margin: 0 auto; padding: 20px; display: flex; gap: 30px; align-items: flex-start;">
+        <!-- Main Content Area (75%) -->
+        <div style="flex: 3; margin-right: 320px; background: var(--card-bg); border-radius: 16px; padding: 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border: 1px solid var(--border-color); transition: background-color 0.3s ease, box-shadow 0.3s ease; position: relative; overflow: hidden;">
+            <!-- Subtle background pattern -->
+            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0.03; background-image: radial-gradient(circle at 25% 25%, var(--primary-accent) 2px, transparent 2px), radial-gradient(circle at 75% 75%, var(--secondary-accent) 2px, transparent 2px); background-size: 40px 40px; pointer-events: none;"></div>
+            <!-- Header Section -->
+            <div style="text-align: center; margin-bottom: 50px; position: relative; z-index: 2;">
+                <div class="toggle-cont" style="position: absolute; top: 10px; right: 10px; z-index: 20;">
+                    <input class="toggle-input" id="theme-toggle" name="theme-toggle" type="checkbox" />
+                    <label class="toggle-label" for="theme-toggle">
+                        <div class="cont-icon">
+                            <span style="--width: 2; --deg: 25; --duration: 11" class="sparkle"></span>
+                            <span style="--width: 1; --deg: 100; --duration: 18" class="sparkle"></span>
+                            <span style="--width: 1; --deg: 280; --duration: 5" class="sparkle"></span>
+                            <span style="--width: 2; --deg: 200; --duration: 3" class="sparkle"></span>
+                            <span style="--width: 2; --deg: 30; --duration: 20" class="sparkle"></span>
+                            <span style="--width: 2; --deg: 300; --duration: 9" class="sparkle"></span>
+                            <span style="--width: 1; --deg: 250; --duration: 4" class="sparkle"></span>
+                            <span style="--width: 2; --deg: 210; --duration: 8" class="sparkle"></span>
+                            <span style="--width: 2; --deg: 100; --duration: 9" class="sparkle"></span>
+                            <span style="--width: 1; --deg: 15; --duration: 13" class="sparkle"></span>
+                            <span style="--width: 1; --deg: 75; --duration: 18" class="sparkle"></span>
+                            <span style="--width: 2; --deg: 65; --duration: 6" class="sparkle"></span>
+                            <span style="--width: 2; --deg: 50; --duration: 7" class="sparkle"></span>
+                            <span style="--width: 1; --deg: 320; --duration: 5" class="sparkle"></span>
+                            <span style="--width: 1; --deg: 220; --duration: 5" class="sparkle"></span>
+                            <span style="--width: 1; --deg: 215; --duration: 2" class="sparkle"></span>
+                            <span style="--width: 2; --deg: 135; --duration: 9" class="sparkle"></span>
+                            <span style="--width: 2; --deg: 45; --duration: 4" class="sparkle"></span>
+                            <span style="--width: 1; --deg: 78; --duration: 16" class="sparkle"></span>
+                            <span style="--width: 1; --deg: 89; --duration: 19" class="sparkle"></span>
+                            <span style="--width: 2; --deg: 65; --duration: 14" class="sparkle"></span>
+                            <span style="--width: 2; --deg: 97; --duration: 1" class="sparkle"></span>
+                            <span style="--width: 1; --deg: 174; --duration: 10" class="sparkle"></span>
+                            <span style="--width: 1; --deg: 236; --duration: 5" class="sparkle"></span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 30 30" class="icon">
+                                <path d="M0.96233 28.61C1.36043 29.0081 1.96007 29.1255 2.47555 28.8971L10.4256 25.3552C13.2236 24.11 16.4254 24.1425 19.2107 25.4401L27.4152 29.2747C27.476 29.3044 27.5418 29.3023 27.6047 29.32C27.6563 29.3348 27.7079 29.3497 27.761 29.3574C27.843 29.3687 27.9194 29.3758 28 29.3688C28.1273 29.3617 28.2531 29.3405 28.3726 29.2945C28.4447 29.262 28.5162 29.2287 28.5749 29.1842C28.6399 29.1446 28.6993 29.0994 28.7509 29.0477L28.9008 28.8582C28.9468 28.7995 28.9793 28.7274 29.0112 28.656C29.0599 28.5322 29.0811 28.4036 29.0882 28.2734C29.0939 28.1957 29.0868 28.1207 29.0769 28.0415C29.0705 27.9955 29.0585 27.9524 29.0472 27.9072C29.0295 27.8343 29.0302 27.7601 28.9984 27.6901L25.1638 19.4855C23.8592 16.7073 23.8273 13.5048 25.0726 10.7068L28.6145 2.75679C28.8429 2.24131 28.7318 1.63531 28.3337 1.2372C27.9165 0.820011 27.271 0.721743 26.7491 0.9961L19.8357 4.59596C16.8418 6.15442 13.2879 6.18696 10.2615 4.70062L1.80308 0.520214C1.7055 0.474959 1.60722 0.441742 1.50964 0.421943C1.44459 0.409215 1.37882 0.395769 1.3074 0.402133C1.14406 0.395769 0.981436 0.428275 0.818095 0.499692C0.77284 0.519491 0.719805 0.545671 0.67455 0.578198C0.596061 0.617088 0.524653 0.675786 0.4596 0.74084C0.394546 0.805894 0.335843 0.877306 0.296245 0.956502C0.263718 1.00176 0.237561 1.05477 0.217762 1.10003C0.152708 1.24286 0.126545 1.40058 0.120181 1.54978C0.120181 1.61483 0.126527 1.6735 0.132891 1.73219C0.15269 1.85664 0.178881 1.97332 0.237571 2.08434L4.41798 10.5427C5.91139 13.5621 5.8725 17.1238 4.3204 20.1099L0.720514 27.0233C0.440499 27.5536 0.545137 28.1928 0.96233 28.61Z"></path>
+                            </svg>
+                        </div>
+                    </label>
+                </div>
+
+
+                <h1 style="font-size: 3rem; font-weight: 800; margin-bottom: 15px; color: var(--text-color); transition: color 0.3s ease; background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">LexiMind</h1>
+                <p style="font-size: 1.2rem; color: var(--text-secondary); max-width: 650px; margin: 0 auto; line-height: 1.7; transition: color 0.3s ease; font-weight: 500;">
+                    Advanced AI-powered legal judgment analysis and case similarity search
+                </p>
+                <div style="margin-top: 25px; display: flex; align-items: center; justify-content: center; gap: 15px;">
+                    <div style="display: flex; align-items: center; background: var(--success-bg); border: 1px solid var(--success-border); border-radius: 20px; padding: 8px 16px;">
+                        <span style="display: inline-block; width: 8px; height: 8px; background: var(--success-color); border-radius: 50%; margin-right: 8px; animation: pulse 2s infinite;"></span>
+                        <span style="font-size: 0.9rem; color: var(--success-color); font-weight: 600;">AI Models Active & Ready</span>
+                    </div>
+                    <button onclick="forcePageReset()" style="background: var(--primary-accent); color: white; border: none; border-radius: 20px; padding: 8px 16px; font-size: 0.8rem; cursor: pointer; font-weight: 600;">
+                        🔄 Reset Page
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Input Section -->
+            <form action="/" method="post" enctype="multipart/form-data" style="margin-bottom: 40px;">
+
+                <!-- Text Input -->
+                <div style="margin-bottom: 35px;">
+                    <label style="display: block; font-size: 1.3rem; font-weight: 600; margin-bottom: 12px; color: var(--text-color); transition: color 0.3s ease; display: flex; align-items: center;">
+                        <span style="font-size: 1.5rem; margin-right: 8px;">📝</span>
+                        Judgment Text Input
+                    </label>
+                    <div style="position: relative;">
+                        <textarea name="text_input" rows="6" id="text-input"
+                            style="width: 100%; padding: 18px; border: 2px solid var(--border-color); border-radius: 12px; font-size: 1rem; resize: vertical; box-sizing: border-box; background: var(--card-bg); color: var(--text-color); transition: all 0.3s ease; font-family: inherit; line-height: 1.5; box-shadow: 0 2px 8px rgba(0,0,0,0.05);"
+                            placeholder="Paste your legal judgment text here..."
+                            onfocus="this.style.borderColor='var(--primary-accent)'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1), 0 4px 12px rgba(0,0,0,0.1)'"
+                            onblur="this.style.borderColor='var(--border-color)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.05)'"></textarea>
+                        <div style="position: absolute; bottom: 12px; right: 12px; font-size: 0.8rem; background: var(--bg-color); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color);">
+                            <span id="word-count">0</span> words
+                        </div>
+                    </div>
+                    <div id="word-count-message" style="margin-top: 8px; font-size: 0.9rem; display: none;"></div>
+                </div>
+
+                <!-- Divider -->
+                <div style="text-align: center; margin: 30px 0; position: relative;">
+                    <div style="border-top: 1px solid var(--border-color); margin: 20px 0; transition: border-color 0.3s ease;"></div>
+                    <span style="background: var(--card-bg); padding: 0 20px; font-weight: bold; color: var(--text-secondary); transition: background-color 0.3s ease, color 0.3s ease;">OR</span>
+                </div>
+
+                <!-- File Upload -->
+                <div style="margin-bottom: 35px;">
+                    <label style="display: block; font-size: 1.3rem; font-weight: 600; margin-bottom: 12px; color: var(--text-color); transition: color 0.3s ease; display: flex; align-items: center;">
+                        <span style="font-size: 1.5rem; margin-right: 8px;">📄</span>
+                        Document Upload
+                    </label>
+                    <div style="position: relative;">
+                        <input type="file" name="file" accept="application/pdf" id="file-input"
+                            style="position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2;">
+                        <div id="file-upload-area" style="border: 2px dashed var(--border-color); border-radius: 12px; padding: 24px; background: var(--card-bg); transition: all 0.3s ease; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative;"
+                              onmouseover="this.style.borderColor='var(--primary-accent)'; this.style.background='linear-gradient(135deg, var(--card-bg), rgba(52, 152, 219, 0.02))'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 16px rgba(0,0,0,0.1)'"
+                              onmouseout="this.style.borderColor='var(--border-color)'; this.style.background='var(--card-bg)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.05)'">
+                            <div style="font-size: 2.5rem; margin-bottom: 12px;">📄</div>
+                            <div id="file-upload-text" style="font-size: 1.1rem; font-weight: 600; color: var(--text-color); margin-bottom: 8px;">Choose PDF File</div>
+                            <div id="selected-file-name" style="font-size: 0.9rem; color: var(--primary-accent); margin-bottom: 8px; font-weight: 500; display: none;"></div>
+                            <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px;">Drag & drop or click to browse</div>
+                            <div style="display: inline-flex; align-items: center; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 16px; padding: 6px 12px;">
+                                <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">Max: 10 MB • PDF only</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div style="padding-top: 10px;">
+                    <button type="submit" id="submit-btn"
+                        style="width: 100%; background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent)); color: white; font-size: 1.2rem; font-weight: 700; padding: 18px 24px; border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(52, 152, 219, 0.3); position: relative; overflow: hidden;"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(52, 152, 219, 0.4)'"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(52, 152, 219, 0.3)'">
+                        <div style="position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0), rgba(255,255,255,0.1), rgba(255,255,255,0)); transform: translateX(-100%); transition: transform 0.6s ease;"
+                              onmouseover="this.parentElement.querySelector('.shine').style.transform='translateX(100%)'"></div>
+                        <span id="submit-text" style="position: relative; z-index: 1; display: flex; align-items: center; justify-content: center;">
+                            <div class="search-icon" style="margin-right: 10px; color: white;"></div>
+                            <span>Analyze Judgment</span>
+                            <span style="font-size: 1.2rem; margin-left: 10px;">⚡</span>
+                        </span>
+                    </button>
+
+                    <!-- Progress Bar -->
+                    <div id="upload-progress" style="display: none; margin-top: 15px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="font-size: 0.9rem; color: var(--text-secondary);">Processing...</span>
+                            <span id="progress-text" style="font-size: 0.9rem; color: var(--primary-accent); font-weight: 600;">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Loading Animation -->
+            <div id="hand-loading" class="hand-loading">
+                <div class="finger"></div>
+                <div class="finger"></div>
+                <div class="finger"></div>
+                <div class="finger"></div>
+                <div class="palm"></div>
+                <div class="thumb"></div>
+            </div>
+
+            <!-- Loading Skeleton -->
+            <div id="loading-skeleton" style="display: none;">
+                <div style="background: var(--success-bg); border: 1px solid var(--success-border); border-radius: 12px; padding: 24px; margin-bottom: 25px;">
+                    <div class="skeleton skeleton-title" style="width: 60%;"></div>
+                    <div class="skeleton skeleton-text" style="width: 40%;"></div>
+                </div>
+
+                <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+                    <div style="display: flex; align-items: center; margin-bottom: 25px;">
+                        <div class="skeleton" style="width: 48px; height: 48px; border-radius: 12px; margin-right: 16px;"></div>
+                        <div style="flex: 1;">
+                            <div class="skeleton skeleton-title" style="width: 80%; margin-bottom: 8px;"></div>
+                            <div class="skeleton skeleton-text" style="width: 60%;"></div>
+                        </div>
+                        <div class="skeleton" style="width: 60px; height: 40px; border-radius: 8px;"></div>
+                    </div>
+
+                    <div style="display: grid; gap: 20px;">
+                        {% for i in range(3) %}
+                        <div class="skeleton skeleton-card">
+                            <div style="display: flex; align-items: flex-start; margin-bottom: 16px;">
+                                <div class="skeleton" style="width: 40px; height: 40px; border-radius: 10px; margin-right: 14px; flex-shrink: 0;"></div>
+                                <div style="flex: 1;">
+                                    <div class="skeleton skeleton-title" style="width: 90%; margin-bottom: 12px;"></div>
+                                    <div style="display: flex; align-items: center; gap: 16px;">
+                                        <div class="skeleton skeleton-text" style="width: 120px;"></div>
+                                        <div class="skeleton" style="flex: 1; height: 6px; border-radius: 3px;"></div>
+                                    </div>
+                                </div>
+                                <div class="skeleton" style="width: 100px; height: 32px; border-radius: 8px;"></div>
+                            </div>
+                            <div class="skeleton skeleton-text" style="width: 100%;"></div>
+                            <div class="skeleton skeleton-text" style="width: 85%;"></div>
+                            <div class="skeleton skeleton-text" style="width: 70%;"></div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            {% if category %}
+            <div id="category-result" style="background: var(--success-bg); border: 1px solid var(--success-border); border-radius: 12px; padding: 24px; margin-bottom: 25px; transition: background-color 0.3s ease, border-color 0.3s ease;">
+                <!-- Debug info -->
+                <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 10px; font-family: monospace;">
+                    DEBUG: category="{{ category }}", results={{ results|length if results else 0 }}
+                </div>
+                <h3 style="font-size: 1.3rem; font-weight: 600; margin-bottom: 12px; color: var(--text-color); transition: color 0.3s ease;">🏷️ Predicted Category</h3>
+                <p style="font-size: 1.6rem; font-weight: 700; color: var(--success-color); transition: color 0.3s ease; margin: 0;">{{ category }}</p>
+            </div>
+            {% endif %}
+
+            {% if results %}
+            <div id="search-results" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 30px; transition: background-color 0.3s ease, border-color 0.3s ease; box-shadow: 0 4px 20px rgba(0,0,0,0.08); position: relative; overflow: hidden;">
+                <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--primary-accent), var(--secondary-accent));"></div>
+
+                <div style="display: flex; align-items: center; margin-bottom: 25px;">
+                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent)); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 16px; box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);">
+                        <div class="search-icon medium" style="color: white;"></div>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; color: var(--text-color); transition: color 0.3s ease;">Similar Cases Found</h3>
+                        <p style="color: var(--text-secondary); font-size: 1rem; transition: color 0.3s ease;">AI-powered semantic search results</p>
+                    </div>
+                    <div style="margin-left: auto; text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 800; color: var(--primary-accent);">{{ results|length }}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;">matches</div>
+                    </div>
+                </div>
+
+                <div style="display: grid; gap: 20px;">
+                    {% for r in results %}
+                    <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; transition: all 0.3s ease; position: relative; overflow: hidden;"
+                         onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.12)'; this.style.borderColor='var(--primary-accent)'"
+                         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'; this.style.borderColor='var(--border-color)'">
+
+                        <div style="display: flex; align-items: flex-start; margin-bottom: 16px;">
+                            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent)); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 14px; flex-shrink: 0;">
+                                <span style="font-size: 1.2rem;">📄</span>
+                            </div>
+                            <div style="flex: 1; min-width: 0; overflow: hidden;">
+                                <h4 class="case-title" style="font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; color: var(--text-color); transition: color 0.3s ease; line-height: 1.3; word-wrap: break-word; overflow-wrap: break-word; hyphens: auto; white-space: normal; cursor: pointer;"
+                                    onclick="showCaseModal(this)"
+                                    data-case="{{ r.case }}"
+                                    data-score="{{ r.score }}"
+                                    data-rank="{{ r.rank }}"
+                                    data-content="{{ r.full_text | replace("'", "\\'") | replace('"', '\\"') | replace('\n', '\\n') | replace('\r', '') }}"
+                                    onmouseover="this.style.color='var(--primary-accent)'"
+                                    onmouseout="this.style.color='var(--text-color)'">
+                                    {{ r.case }}
+                                </h4>
+                                <div style="display: flex; align-items: center; gap: 16px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">Similarity:</span>
+                                        <span style="font-weight: 700; color: var(--primary-accent);">{{ "%.1f"|format(r.score * 100) }}%</span>
+                                    </div>
+                                    <div style="flex: 1; height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden;">
+                                        <div class="similarity-bar-fill" data-score="{{ r.score }}" style="height: 100%; background: linear-gradient(90deg, var(--primary-accent), var(--secondary-accent)); border-radius: 3px; width: 0%; transition: width 1s ease;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+                                <button class="view-details-btn"
+                                    onclick="showCaseModal(this)"
+                                    data-case="{{ r.case }}"
+                                    data-score="{{ r.score }}"
+                                    data-rank="{{ r.rank }}"
+                                    data-content="{{ r.full_text | replace("'", "\\'") | replace('"', '\\"') | replace('\n', '\\n') | replace('\r', '') }}"
+                                    style="background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent)); color: white; border: none; border-radius: 8px; padding: 8px 16px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);"
+                                    onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(52, 152, 219, 0.4)'"
+                                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(52, 152, 219, 0.3)'">
+                                    📄 View Details
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; position: relative;">
+                            <div class="case-preview-container" data-case-id="{{ loop.index }}">
+                                <p class="case-preview-text" style="color: var(--text-secondary); line-height: 1.6; margin: 0; font-size: 0.95rem; transition: color 0.3s ease; word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">{{ r.preview }}...</p>
+                                <div class="preview-fade"></div>
+                            </div>
+                            <button class="expand-btn" onclick="togglePreview(this)" style="display: none;">
+                                <span class="expand-text">Show More</span>
+                                <span class="expand-icon">▼</span>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Store Original Document Content -->
+            {% if original_document and original_document.strip() %}
+            <div id="original-document-content" style="display: none;" data-content="{{ original_document | replace("'", "\\'") | replace('"', '\\"') | replace('\n', '\\n') | replace('\r', '') }}"></div>
+            {% endif %}
+
+            <!-- Chatbot Section -->
+            {% if results %}
+            <div id="chatbot-section" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 30px; margin-top: 25px; transition: background-color 0.3s ease, border-color 0.3s ease; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+                <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #8B5CF6, #3B82F6);"></div>
+
+                <div style="display: flex; align-items: center; margin-bottom: 25px;">
+                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #8B5CF6, #3B82F6); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
+                        <span style="font-size: 1.5rem;">🤖</span>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; color: var(--text-color); transition: color 0.3s ease;">Legal Assistant</h3>
+                        <p style="color: var(--text-secondary); font-size: 1rem; transition: color 0.3s ease;">Ask questions about your uploaded document in simple terms</p>
+                    </div>
+                </div>
+
+                <!-- Chat Messages Container -->
+                <div id="chat-messages" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px; padding: 10px; background: var(--bg-color); border-radius: 12px; border: 1px solid var(--border-color);">
+                    <div class="chat-message bot-message" style="margin-bottom: 15px; padding: 15px; background: linear-gradient(135deg, #8B5CF6, #3B82F6); color: white; border-radius: 12px; position: relative;">
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 1.2rem; margin-right: 8px;">🤖</span>
+                            <strong>Legal Assistant</strong>
+                        </div>
+                        <div>Hi! I'm your legal assistant. I can explain your uploaded document in simple, everyday language. Ask me anything about your legal document!</div>
+                    </div>
+                </div>
+
+                <!-- Chat Input -->
+                <div style="display: flex; gap: 12px; align-items: flex-end;">
+                    <div style="flex: 1;">
+                        <textarea id="chat-input" rows="3"
+                            style="width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 12px; font-size: 0.95rem; resize: vertical; box-sizing: border-box; background: var(--card-bg); color: var(--text-color); transition: all 0.3s ease; font-family: inherit;"
+                            placeholder="Ask a question about your uploaded document (e.g., 'What does this mean?', 'Give me a structured summary', or 'Explain this like I'm not a law student')"
+                            onfocus="this.style.borderColor='var(--primary-accent)'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)'"
+                            onblur="this.style.borderColor='var(--border-color)'; this.style.boxShadow='none'"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button id="test-context-btn"
+                            style="background: linear-gradient(135deg, #10B981, #059669); color: white; border: none; border-radius: 12px; padding: 12px 16px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); min-height: 48px;"
+                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(16, 185, 129, 0.4)'"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.3)'"
+                            onclick="testContextExtraction()">
+                            Test Context
+                        </button>
+                        <button id="chat-send-btn"
+                            style="background: linear-gradient(135deg, #8B5CF6, #3B82F6); color: white; border: none; border-radius: 12px; padding: 12px 20px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); min-height: 48px;"
+                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(139, 92, 246, 0.4)'"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(139, 92, 246, 0.3)'">
+                            <span id="chat-send-text">Send</span>
+                            <div id="chat-loading" style="display: none; width: 16px; height: 16px; border: 2px solid transparent; border-top: 2px solid white; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chat Instructions -->
+                <div style="margin-top: 15px; padding: 12px; background: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color);">
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">💡 Quick Tips:</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
+                        <div>• Ask "What does this mean?"</div>
+                        <div>• Ask "Explain this in simple words"</div>
+                        <div>• Ask "Give me a structured summary"</div>
+                        <div>• Ask "Explain like I'm not a law student"</div>
+                        <div>• Explains your document content</div>
+                    </div>
+                </div>
+
+                <!-- API Status Notice -->
+                <div id="api-status-notice" style="margin-top: 15px; padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2); display: none;">
+                    <div style="font-size: 0.85rem; color: #dc2626; margin-bottom: 8px; font-weight: 600;">⚠️ API Quota Exceeded</div>
+                    <div style="font-size: 0.75rem; color: #dc2626;">
+                        Your Gemini API free tier limit has been reached. <br>
+                        <strong>Solutions:</strong><br>
+                        1. <a href="https://ai.google.dev/pricing" target="_blank" style="color: #2563eb;">Upgrade to paid plan</a><br>
+                        2. Wait for quota reset (usually monthly)<br>
+                        3. Use a different API key with remaining quota
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Sidebar with Justice Image (25%) -->
+        <div style="flex: 1; position: fixed; top: 20px; right: 20px; width: 25%; max-width: 300px; height: calc(100vh - 160px);">
+            <div style="background: var(--card-bg); border-radius: 16px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border: 1px solid var(--border-color); text-align: center; transition: background-color 0.3s ease; height: 100%; display: flex; flex-direction: column;">
+                <!-- Justice Image Section -->
+                <div style="flex-shrink: 0;">
+                    <div style="width: 120px; height: 120px; background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent)); border-radius: 20px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 8px 24px rgba(52, 152, 219, 0.3);">
+                        <img src="/static/92-922917_scales-of-justice-symbol-of-indian-judiciary-hd.png" alt="Scales of Justice" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;">
+                    </div>
+                    <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--text-color); margin-bottom: 15px; transition: color 0.3s ease;">Justice & Law</h3>
+                    <p style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px; transition: color 0.3s ease;">Symbol of fairness, equality, and the Indian judicial system.</p>
+                </div>
+
+                <!-- Additional Content Section -->
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+                    <!-- Features List -->
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="font-size: 1rem; font-weight: 600; color: var(--text-color); margin-bottom: 12px; transition: color 0.3s ease;">AI Features</h4>
+                        <div style="space-y: 8px;">
+                            <div style="display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                                <span style="font-size: 1.2rem; margin-right: 8px;">📄</span>
+                                <span style="font-size: 0.85rem; color: var(--text-secondary); transition: color 0.3s ease;">PDF Analysis</span>
+                            </div>
+                            <div style="display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                                <div class="search-icon small" style="margin-right: 8px; color: var(--text-secondary);"></div>
+                                <span style="font-size: 0.85rem; color: var(--text-secondary); transition: color 0.3s ease;">Semantic Search</span>
+                            </div>
+                            <div style="display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                                <span style="font-size: 1.2rem; margin-right: 8px;">🏷️</span>
+                                <span style="font-size: 0.85rem; color: var(--text-secondary); transition: color 0.3s ease;">Category Classification</span>
+                            </div>
+                            <div style="display: flex; align-items: center; padding: 8px 0;">
+                                <span style="font-size: 1.2rem; margin-right: 8px;">⚡</span>
+                                <span style="font-size: 0.85rem; color: var(--text-secondary); transition: color 0.3s ease;">Real-time Processing</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status Indicator -->
+                    <div style="padding-top: 20px; border-top: 1px solid var(--border-color);">
+                        <div style="display: inline-flex; align-items: center; background: var(--success-bg); border: 1px solid var(--success-border); border-radius: 16px; padding: 8px 14px;">
+                            <span style="width: 6px; height: 6px; background: var(--success-color); border-radius: 50%; margin-right: 6px; animation: pulse 2s infinite;"></span>
+                            <span style="font-size: 0.8rem; color: var(--success-color); font-weight: 600;">System Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Case Detail Modal -->
+    <div id="case-modal" class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modal-case-title" class="modal-title"></h3>
+                <button id="modal-close" class="modal-close" onclick="closeModal()" type="button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="case-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">Similarity Score</div>
+                        <div id="modal-similarity" class="meta-value"></div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Rank</div>
+                        <div id="modal-rank" class="meta-value"></div>
+                    </div>
+                </div>
+                <div id="modal-case-content" class="case-content"></div>
+            </div>
+            <div class="modal-actions">
+                <button id="modal-copy" class="modal-btn" onclick="copyModalContent()">📋 Copy Text</button>
+                <button id="modal-close-bottom" class="modal-btn primary" onclick="closeModal()" type="button">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align: center; margin-top: 60px; margin-right: 320px; padding: 30px 20px; border-top: 1px solid var(--border-color); transition: border-color 0.3s ease; background: var(--card-bg); border-radius: 16px; margin-bottom: 20px;">
+        <div style="display: inline-flex; align-items: center; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 24px; padding: 16px 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+            <div style="display: flex; align-items: center; margin-right: 16px;">
+                <span style="font-size: 1.5rem; margin-right: 8px;">⚖️</span>
+                <span style="font-size: 1.2rem; font-weight: 700; color: var(--text-color);">LexiMind</span>
+            </div>
+            <div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 16px;"></div>
+            <span style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 500;">AI-Powered Legal Analysis</span>
+            <div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 16px;"></div>
+            <div style="display: flex; align-items: center;">
+                <div style="width: 8px; height: 8px; background: var(--success-color); border-radius: 50%; margin-right: 8px; animation: pulse 2s infinite;"></div>
+                <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">Live</span>
+            </div>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 16px; font-weight: 500; transition: color 0.3s ease;">
+            Built with Flask, Sentence Transformers & Modern Web Technologies
+        </p>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const textInput = document.querySelector('textarea[name="text_input"]');
+        const fileInput = document.querySelector('input[name="file"]');
+        const submitButton = document.querySelector('button[type="submit"]');
+        const themeToggle = document.getElementById('theme-toggle');
+        const body = document.body;
+
+        // Simple form validation
+        function updateButtonState() {
+            const text = textInput.value.trim();
+            const isTextFilled = text !== '';
+            const isFileSelected = fileInput.files.length > 0;
+            const wordCount = isTextFilled ? text.split(/\s+/).length : 0;
+            const isTextValid = isTextFilled && wordCount >= 5;
+
+            if (isTextValid || isFileSelected) {
+                submitButton.disabled = false;
+                submitButton.style.opacity = '1';
+            } else {
+                submitButton.disabled = true;
+                submitButton.style.opacity = '0.6';
+            }
+        }
+
+        // Theme toggle functionality
+        function toggleTheme() {
+            const isDarkMode = themeToggle.checked;
+            body.classList.toggle('dark-mode', isDarkMode);
+            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const isDarkMode = savedTheme === 'dark';
+            themeToggle.checked = isDarkMode;
+            body.classList.toggle('dark-mode', isDarkMode);
+        }
+
+        // Real-time word count and validation
+        const textInputField = document.getElementById('text-input');
+        const wordCountDisplay = document.getElementById('word-count');
+        const wordCountMessage = document.getElementById('word-count-message');
+
+        function updateWordCount() {
+            const text = textInputField.value.trim();
+            const wordCount = text === '' ? 0 : text.split(/\s+/).length;
+
+            // Update word count display
+            wordCountDisplay.textContent = wordCount;
+
+            // Update validation message
+            if (wordCount === 0) {
+                wordCountMessage.style.display = 'none';
+                wordCountDisplay.style.color = 'var(--text-secondary)';
+            } else if (wordCount < 5) {
+                wordCountMessage.style.display = 'block';
+                wordCountMessage.textContent = `⚠️ Need ${5 - wordCount} more word${5 - wordCount === 1 ? '' : 's'} (minimum 5 words)`;
+                wordCountMessage.style.color = '#e74c3c';
+                wordCountDisplay.style.color = '#e74c3c';
+            } else {
+                wordCountMessage.style.display = 'block';
+                wordCountMessage.textContent = '✅ Sufficient words for analysis';
+                wordCountMessage.style.color = '#27ae60';
+                wordCountDisplay.style.color = '#27ae60';
+            }
+        }
+
+        // Handle input changes
+        textInput.addEventListener('input', function() {
+            if (textInput.value.trim() !== '') {
+                fileInput.value = '';
+            }
+            updateWordCount();
+            updateButtonState();
+        });
+
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files.length > 0) {
+                textInput.value = '';
+                updateWordCount(); // Reset word count when file is selected
+                displaySelectedFileName(fileInput.files[0]);
+            } else {
+                hideSelectedFileName();
+            }
+            updateButtonState();
+        });
+
+        // Function to display selected file name
+        function displaySelectedFileName(file) {
+            const fileNameElement = document.getElementById('selected-file-name');
+            const fileUploadText = document.getElementById('file-upload-text');
+            const fileUploadArea = document.getElementById('file-upload-area');
+
+            if (fileNameElement && fileUploadText && fileUploadArea) {
+                // Truncate long file names
+                let displayName = file.name;
+                if (displayName.length > 30) {
+                    displayName = displayName.substring(0, 27) + '...';
+                }
+
+                fileNameElement.textContent = `📄 ${displayName}`;
+                fileNameElement.style.display = 'block';
+                fileUploadText.textContent = 'PDF Selected';
+                fileUploadText.style.color = 'var(--success-color)';
+                fileUploadArea.classList.add('file-selected');
+            }
+        }
+
+        // Function to hide selected file name
+        function hideSelectedFileName() {
+            const fileNameElement = document.getElementById('selected-file-name');
+            const fileUploadText = document.getElementById('file-upload-text');
+            const fileUploadArea = document.getElementById('file-upload-area');
+
+            if (fileNameElement && fileUploadText && fileUploadArea) {
+                fileNameElement.style.display = 'none';
+                fileUploadText.textContent = 'Choose PDF File';
+                fileUploadText.style.color = 'var(--text-color)';
+                fileUploadArea.classList.remove('file-selected');
+            }
+        }
+
+        // Function to toggle case preview expansion
+        function togglePreview(button) {
+            const container = button.parentElement.querySelector('.case-preview-container');
+            const expandText = button.querySelector('.expand-text');
+            const expandIcon = button.querySelector('.expand-icon');
+
+            if (container && expandText && expandIcon) {
+                const isExpanded = container.classList.contains('expanded');
+
+                if (isExpanded) {
+                    // Collapse
+                    container.classList.remove('expanded');
+                    expandText.textContent = 'Show More';
+                    expandIcon.textContent = '▼';
+                    expandIcon.style.transform = 'rotate(0deg)';
+                } else {
+                    // Expand
+                    container.classList.add('expanded');
+                    expandText.textContent = 'Show Less';
+                    expandIcon.textContent = '▲';
+                    expandIcon.style.transform = 'rotate(180deg)';
+                }
+            }
+        }
+
+        // Function to check and show expand buttons for truncated content
+        function initializeExpandablePreviews() {
+            const previewContainers = document.querySelectorAll('.case-preview-container');
+
+            previewContainers.forEach((container, index) => {
+                const previewText = container.querySelector('.case-preview-text');
+                const expandBtn = container.parentElement.querySelector('.expand-btn');
+
+                if (previewText && expandBtn) {
+                    // Check if content is actually truncated
+                    const scrollHeight = previewText.scrollHeight;
+                    const clientHeight = container.clientHeight;
+
+                    if (scrollHeight > clientHeight + 10) { // +10 for some tolerance
+                        expandBtn.style.display = 'inline-flex';
+                        expandBtn.style.alignItems = 'center';
+                        expandBtn.style.gap = '4px';
+                    }
+
+                    // Add keyword highlighting
+                    highlightKeywords(previewText);
+                }
+            });
+        }
+
+        // Function to highlight relevant keywords in preview text
+        function highlightKeywords(element) {
+            if (!element) return;
+
+            const text = element.textContent;
+            const keywords = ['court', 'judgment', 'appeal', 'petition', 'application', 'order', 'decree', 'suit', 'case', 'law', 'act', 'section', 'article'];
+
+            let highlightedText = text;
+            keywords.forEach(keyword => {
+                const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+                highlightedText = highlightedText.replace(regex, `<span class="highlight-keyword">${keyword}</span>`);
+            });
+
+            element.innerHTML = highlightedText;
+        }
+
+        // Mobile-specific enhancements
+        function initializeMobileEnhancements() {
+            // Check if device is mobile
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+
+            if (isMobile) {
+                // Add touch feedback for buttons
+                const buttons = document.querySelectorAll('button, .case-title, .view-details-btn');
+                buttons.forEach(button => {
+                    button.addEventListener('touchstart', function() {
+                        this.style.transform = 'scale(0.98)';
+                    });
+
+                    button.addEventListener('touchend', function() {
+                        this.style.transform = '';
+                    });
+                });
+
+                // Improve modal behavior on mobile
+                const modal = document.getElementById('case-modal');
+                if (modal) {
+                    // Prevent body scroll when modal is open
+                    modal.addEventListener('touchmove', function(e) {
+                        e.stopPropagation();
+                    }, { passive: false });
+
+                    // Add swipe down to close modal
+                    let startY = 0;
+                    let currentY = 0;
+
+                    modal.addEventListener('touchstart', function(e) {
+                        startY = e.touches[0].clientY;
+                    }, { passive: true });
+
+                    modal.addEventListener('touchmove', function(e) {
+                        currentY = e.touches[0].clientY;
+                        const diffY = currentY - startY;
+
+                        // If swiping down significantly, close modal
+                        if (diffY > 100) {
+                            closeModal();
+                        }
+                    }, { passive: true });
+                }
+
+                // Add haptic feedback simulation for supported devices
+                if ('vibrate' in navigator) {
+                    const interactiveElements = document.querySelectorAll('.case-title, .view-details-btn, .expand-btn');
+                    interactiveElements.forEach(element => {
+                        element.addEventListener('click', function() {
+                            navigator.vibrate(10); // Short vibration
+                        });
+                    });
+                }
+
+                // Improve text selection on mobile
+                const textElements = document.querySelectorAll('.case-preview-text, .case-content');
+                textElements.forEach(element => {
+                    element.style.userSelect = 'text';
+                    element.style.webkitUserSelect = 'text';
+                });
+
+                // Add pull-to-refresh indicator (visual only)
+                let touchStartY = 0;
+                window.addEventListener('touchstart', function(e) {
+                    touchStartY = e.touches[0].clientY;
+                });
+
+                window.addEventListener('touchmove', function(e) {
+                    const touchY = e.touches[0].clientY;
+                    const diff = touchStartY - touchY;
+
+                    // Show refresh indicator if pulling down from top
+                    if (diff > 50 && window.scrollY === 0) {
+                        // Could add a refresh indicator here
+                        console.log('Pull to refresh detected');
+                    }
+                });
+            }
+        }
+
+
+        // Enhanced form submission with loading states
+        form.addEventListener('submit', function(e) {
+            const isTextFilled = textInput.value.trim() !== '';
+            const isFileSelected = fileInput.files.length > 0;
+
+            if (isTextFilled || isFileSelected) {
+                e.preventDefault(); // Prevent immediate form submission
+
+                // Show enhanced loading state
+                showLoadingState();
+
+                // Simulate progress for better UX
+                simulateProgress();
+
+                // Submit form after a brief delay to show loading state
+                setTimeout(() => {
+                    form.submit();
+                }, 500);
+            }
+        });
+
+        // Function to show loading state
+        function showLoadingState() {
+            const submitBtn = document.getElementById('submit-btn');
+            const submitText = document.getElementById('submit-text');
+            const uploadProgress = document.getElementById('upload-progress');
+            const loadingSkeleton = document.getElementById('loading-skeleton');
+            const categoryResult = document.getElementById('category-result');
+            const searchResults = document.getElementById('search-results');
+
+            if (submitBtn && submitText && uploadProgress) {
+                // Update submit button
+                submitText.innerHTML = `
+                    <div class="loading-spinner" style="margin-right: 10px;"></div>
+                    <span>Analyzing...</span>
+                `;
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.8';
+
+                // Show progress bar
+                uploadProgress.style.display = 'block';
+
+                // Hide existing results
+                if (categoryResult) categoryResult.style.display = 'none';
+                if (searchResults) searchResults.style.display = 'none';
+
+                // Show skeleton loading
+                if (loadingSkeleton) loadingSkeleton.style.display = 'block';
+            }
+        }
+
+        // Function to simulate progress
+        function simulateProgress() {
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 15;
+
+                if (progress > 90) {
+                    progress = 90; // Cap at 90% until actual completion
+                    clearInterval(progressInterval);
+                }
+
+                if (progressFill && progressText) {
+                    progressFill.style.width = progress + '%';
+                    progressText.textContent = Math.round(progress) + '%';
+                }
+            }, 200);
+
+            // Store interval for cleanup on page reload
+            window.progressInterval = progressInterval;
+        }
+
+        // Function to hide loading state
+        function hideLoadingState() {
+            const uploadProgress = document.getElementById('upload-progress');
+            const loadingSkeleton = document.getElementById('loading-skeleton');
+            const submitBtn = document.getElementById('submit-btn');
+            const submitText = document.getElementById('submit-text');
+
+            // Clear progress interval
+            if (window.progressInterval) {
+                clearInterval(window.progressInterval);
+            }
+
+            // Hide loading elements
+            if (uploadProgress) uploadProgress.style.display = 'none';
+            if (loadingSkeleton) loadingSkeleton.style.display = 'none';
+
+            // Reset submit button
+            if (submitBtn && submitText) {
+                submitText.innerHTML = `
+                    <div class="search-icon" style="margin-right: 10px; color: white;"></div>
+                    <span>Analyze Judgment</span>
+                    <span style="font-size: 1.2rem; margin-left: 10px;">⚡</span>
+                `;
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+            }
+        }
+
+        // Theme toggle event
+        themeToggle.addEventListener('change', toggleTheme);
+
+        // Initialize similarity bars animation
+        function initializeSimilarityBars() {
+            const bars = document.querySelectorAll('.similarity-bar-fill');
+            bars.forEach((bar, index) => {
+                const score = parseFloat(bar.dataset.score);
+                const percentage = Math.round(score * 100);
+                setTimeout(() => {
+                    bar.style.width = percentage + '%';
+                }, index * 100); // Stagger the animations
+            });
+        }
+
+        // Initialize
+        loadTheme();
+        updateWordCount();
+        updateButtonState();
+        initializeSimilarityBars();
+
+        // Add keyboard event listener for modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Add click outside modal to close
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('case-modal');
+            if (modal && modal.classList.contains('show') && e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Initialize file upload area drag and drop
+        initializeFileUploadArea();
+
+        // Hide loading state on page load (in case of browser back/refresh)
+        document.addEventListener('DOMContentLoaded', function() {
+            hideLoadingState();
+
+            // Force clear all cached results on page load
+            console.log('🔄 Forcing page reset on load...');
+
+            // Clear any cached results on page load
+            const categoryResult = document.getElementById('category-result');
+            const searchResults = document.getElementById('search-results');
+            const chatbotSection = document.getElementById('chatbot-section');
+            const originalDocumentContent = document.getElementById('original-document-content');
+
+            if (categoryResult) {
+                categoryResult.style.display = 'none';
+                categoryResult.innerHTML = '';
+                console.log('✅ Cleared category result');
+            }
+
+            if (searchResults) {
+                searchResults.style.display = 'none';
+                searchResults.innerHTML = '';
+                console.log('✅ Cleared search results');
+            }
+
+            if (chatbotSection) {
+                chatbotSection.style.display = 'none';
+                console.log('✅ Cleared chatbot section');
+            }
+
+            if (originalDocumentContent) {
+                originalDocumentContent.remove();
+                console.log('✅ Cleared original document content');
+            }
+
+            // Reset form completely
+            const form = document.querySelector('form');
+            if (form) {
+                form.reset();
+                console.log('✅ Reset form');
+            }
+
+            // Clear file input display
+            hideSelectedFileName();
+
+            // Clear any chat messages
+            const chatMessages = document.getElementById('chat-messages');
+            if (chatMessages) {
+                chatMessages.innerHTML = '';
+                console.log('✅ Cleared chat messages');
+            }
+
+            // Force hide all result sections
+            const allResults = document.querySelectorAll('[id*="result"], [id*="chatbot"], [id*="original-document"]');
+            allResults.forEach(el => {
+                el.style.display = 'none';
+                console.log('✅ Force hid element:', el.id);
+            });
+
+            console.log('🎯 Page reset complete: All cached results cleared');
+        });
+
+        // Initialize expandable previews after results load
+        setTimeout(() => {
+            initializeExpandablePreviews();
+        }, 100);
+
+        // Mobile-specific enhancements
+        initializeMobileEnhancements();
+
+        // Function to initialize file upload area with drag and drop
+        function initializeFileUploadArea() {
+            const fileUploadArea = document.getElementById('file-upload-area');
+            const fileInput = document.getElementById('file-input');
+
+            if (!fileUploadArea || !fileInput) return;
+
+            // Drag and drop events
+            fileUploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.style.borderColor = 'var(--primary-accent)';
+                this.style.background = 'linear-gradient(135deg, var(--card-bg), rgba(52, 152, 219, 0.05))';
+            });
+
+            fileUploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                // Only reset if we're leaving the upload area entirely
+                if (!this.contains(e.relatedTarget)) {
+                    this.style.borderColor = 'var(--border-color)';
+                    this.style.background = 'var(--card-bg)';
+                }
+            });
+
+            fileUploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                this.style.borderColor = 'var(--border-color)';
+                this.style.background = 'var(--card-bg)';
+
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const file = files[0];
+                    if (file.type === 'application/pdf') {
+                        // Create a new FileList-like object and assign it to the input
+                        const dt = new DataTransfer();
+                        dt.items.add(file);
+                        fileInput.files = dt.files;
+
+                        // Trigger the change event
+                        fileInput.dispatchEvent(new Event('change'));
+                    } else {
+                        alert('Please select a PDF file only.');
+                    }
+                }
+            });
+        }
+    });
+
+
+    // Show case modal function
+    function showCaseModal(element) {
+        const data = element.dataset;
+        const modal = document.getElementById('case-modal');
+        const modalTitle = document.getElementById('modal-case-title');
+        const modalSimilarity = document.getElementById('modal-similarity');
+        const modalRank = document.getElementById('modal-rank');
+        const modalContent = document.getElementById('modal-case-content');
+
+        console.log('showCaseModal called with element:', element);
+        console.log('showCaseModal called with data:', data);
+
+        if (modal && modalTitle && modalSimilarity && modalRank && modalContent) {
+            // Parse and validate data
+            const caseTitle = data.case || 'Unknown Case';
+            const score = parseFloat(data.score || 0);
+            const rank = data.rank || 'N/A';
+            const content = data.content || 'No content available';
+
+            // Update modal content
+            modalTitle.textContent = caseTitle;
+            modalSimilarity.textContent = `${(score * 100).toFixed(1)}%`;
+            modalRank.textContent = `#${rank}`;
+            modalContent.textContent = content;
+
+            // Show modal with proper visibility
+            modal.style.display = 'flex';
+            modal.classList.add('show');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+
+            console.log('Modal displayed successfully with:', {
+                title: caseTitle,
+                score: score,
+                rank: rank,
+                contentLength: content.length
+            });
+        } else {
+            console.error('Modal elements not found:', {
+                modal: !!modal,
+                modalTitle: !!modalTitle,
+                modalSimilarity: !!modalSimilarity,
+                modalRank: !!modalRank,
+                modalContent: !!modalContent
+            });
+            alert('Modal elements not found. Check console for details.');
+        }
+    }
+
+    // Close modal function
+    function closeModal() {
+        const modal = document.getElementById('case-modal');
+        if (modal) {
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+            console.log('Modal closed');
+        }
+    }
+
+    // Copy modal content function
+    function copyModalContent() {
+        const modalContent = document.getElementById('modal-case-content');
+        if (modalContent) {
+            const text = modalContent.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                // Show temporary success message
+                const copyBtn = document.getElementById('modal-copy');
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = '✅ Copied!';
+                copyBtn.style.background = 'var(--success-color)';
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                    copyBtn.style.background = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                alert('Failed to copy text to clipboard');
+            });
+        }
+    }
+
+    // Get context chunks from original uploaded document (moved to global scope)
+    function getContextChunks() {
+        const contextChunks = [];
+
+        // First priority: Use the original uploaded document content
+        const originalDocumentElement = document.getElementById('original-document-content');
+        if (originalDocumentElement && originalDocumentElement.dataset.content) {
+            const originalContent = originalDocumentElement.dataset.content;
+            console.log('DEBUG: Found original document content, length:', originalContent.length);
+
+            if (originalContent && originalContent.trim().length > 0) {
+                contextChunks.push({
+                    case: 'Your Uploaded Document',
+                    preview: originalContent.substring(0, 1000) + (originalContent.length > 1000 ? '...' : ''),
+                    full_text: originalContent,
+                    score: 1.0,
+                    rank: 1
+                });
+
+                console.log('DEBUG: Using original document as context');
+                console.log('DEBUG: Returning', contextChunks.length, 'context chunks');
+                return contextChunks;
+            }
+        }
+
+        // Fallback: Try to extract from search results if no original document
+        console.log('DEBUG: No original document found, trying search results fallback');
+
+        const caseElements = document.querySelectorAll('[data-case]');
+        console.log('DEBUG: Found', caseElements.length, 'elements with case data');
+
+        caseElements.forEach((element, index) => {
+            const caseTitle = element.dataset.case;
+            const score = parseFloat(element.dataset.score || 0);
+            const rank = parseInt(element.dataset.rank || index + 1);
+            const content = element.dataset.content || '';
+
+            // Get preview text from the same card
+            let previewText = '';
+            const card = element.closest('.list-item');
+            if (card) {
+                const previewElement = card.querySelector('.case-preview-text');
+                previewText = previewElement ? previewElement.textContent.trim() : content.substring(0, 500);
+            }
+
+            console.log('DEBUG: Element', index, 'caseTitle:', caseTitle);
+            console.log('DEBUG: Element', index, 'previewText:', previewText ? previewText.substring(0, 100) + '...' : 'null');
+
+            if (caseTitle && (previewText || content)) {
+                contextChunks.push({
+                    case: caseTitle,
+                    preview: previewText || content.substring(0, 500),
+                    full_text: content || previewText,
+                    score: score,
+                    rank: rank
+                });
+
+                console.log('DEBUG: Added context chunk for:', caseTitle);
+            } else {
+                console.log('DEBUG: Skipping element', index, 'missing caseTitle or content');
+            }
+        });
+
+        // Final fallback: Look for case names in the page text
+        if (contextChunks.length === 0) {
+            console.log('DEBUG: No structured results found, trying text-based fallback');
+
+            const allText = document.body.textContent || document.body.innerText || '';
+            const caseMatches = allText.match(/([A-Z][^.]*vs\.?\s*[A-Z][^.]*)/g);
+
+            if (caseMatches && caseMatches.length > 0) {
+                console.log('DEBUG: Found', caseMatches.length, 'potential cases in text fallback');
+
+                caseMatches.slice(0, 5).forEach((caseName, index) => {
+                    contextChunks.push({
+                        case: caseName.trim(),
+                        preview: 'Legal case found in document analysis',
+                        full_text: 'Legal case found in document analysis',
+                        score: 0.8,
+                        rank: index + 1
+                    });
+                    console.log('DEBUG: Added text fallback context chunk for:', caseName.trim());
+                });
+            }
+        }
+
+        console.log('DEBUG: Returning', contextChunks.length, 'context chunks');
+        return contextChunks;
+    }
+
+    // Chatbot functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatInput = document.getElementById('chat-input');
+        const chatSendBtn = document.getElementById('chat-send-btn');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatSendText = document.getElementById('chat-send-text');
+        const chatLoading = document.getElementById('chat-loading');
+
+        // Handle chat input
+        function handleChatSubmit() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            addMessage(message, 'user');
+
+            // Clear input
+            chatInput.value = '';
+
+            // Show loading state
+            setChatLoading(true);
+
+            // Send message to backend
+            sendChatMessage(message);
+        }
+
+        // Add message to chat
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${sender}-message`;
+            messageDiv.style.cssText = `
+                margin-bottom: 15px;
+                padding: 15px;
+                border-radius: 12px;
+                position: relative;
+                animation: slideInUp 0.3s ease-out;
+            `;
+
+            if (sender === 'user') {
+                messageDiv.style.cssText += `
+                    background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
+                    color: white;
+                    margin-left: 40px;
+                    text-align: right;
+                `;
+                messageDiv.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 8px;">
+                        <strong>You</strong>
+                        <span style="font-size: 1.2rem; margin-left: 8px;">👤</span>
+                    </div>
+                    <div>${escapeHtml(text)}</div>
+                `;
+            } else {
+                messageDiv.style.cssText += `
+                    background: linear-gradient(135deg, #8B5CF6, #3B82F6);
+                    color: white;
+                    margin-right: 40px;
+                `;
+                messageDiv.innerHTML = `
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 1.2rem; margin-right: 8px;">🤖</span>
+                        <strong>Legal Assistant</strong>
+                    </div>
+                    <div>${text}</div>
+                `;
+            }
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Send message to backend
+        async function sendChatMessage(message) {
+            try {
+                // Get context from current search results
+                const contextChunks = getContextChunks();
+
+                console.log('DEBUG: Sending chat request with', contextChunks.length, 'context chunks');
+                console.log('DEBUG: Context chunks:', contextChunks);
+
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: message,
+                        context: contextChunks
+                    })
+                });
+
+                let data;
+                try {
+                    data = await response.json();
+                    console.log('Response data:', data); // Debug log
+                } catch (parseError) {
+                    console.error('JSON parse error:', parseError);
+                    addMessage(`❌ Error: Failed to parse server response.`, 'bot');
+                    return;
+                }
+
+                if (data.success && data.response) {
+                    addMessage(data.response, 'bot');
+                } else if (data.error) {
+                    addMessage(`❌ Error: ${data.error}`, 'bot');
+
+                    // Show API status notice for quota errors
+                    if (data.error.includes('QUOTA EXCEEDED') || data.error.includes('quota') || data.error.includes('429')) {
+                        const apiNotice = document.getElementById('api-status-notice');
+                        if (apiNotice) {
+                            apiNotice.style.display = 'block';
+                        }
+                    }
+                } else {
+                    console.error('Unexpected response format:', data);
+                    addMessage(`❌ Error: Something went wrong. Please try again.`, 'bot');
+                }
+            } catch (error) {
+                console.error('Chat error:', error);
+                addMessage('❌ Sorry, I encountered an error. Please try again.', 'bot');
+            } finally {
+                setChatLoading(false);
+            }
+        }
+
+        // Set loading state
+        function setChatLoading(loading) {
+            if (loading) {
+                chatSendText.style.display = 'none';
+                chatLoading.style.display = 'block';
+                chatSendBtn.disabled = true;
+            } else {
+                chatSendText.style.display = 'block';
+                chatLoading.style.display = 'none';
+                chatSendBtn.disabled = false;
+            }
+        }
+
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Event listeners
+        if (chatSendBtn) {
+            chatSendBtn.addEventListener('click', handleChatSubmit);
+        }
+
+        if (chatInput) {
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleChatSubmit();
+                }
+            });
+        }
+
+        // Auto-resize chat input
+        if (chatInput) {
+            chatInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+        }
+    });
+
+    // Test context extraction function
+    function testContextExtraction() {
+        console.log('🧪 Testing context extraction...');
+
+        // Check if getContextChunks function exists
+        if (typeof getContextChunks === 'undefined') {
+            alert('❌ Error: Context extraction function not found. Please refresh the page and try again.');
+            console.error('getContextChunks function is not defined');
+            return;
+        }
+
+        const contextChunks = getContextChunks();
+
+        if (contextChunks.length > 0) {
+            alert(`✅ Context extraction successful!\n\nFound ${contextChunks.length} case(s):\n\n${contextChunks.map(chunk => `• ${chunk.case}`).join('\n')}\n\nContext will be sent to chatbot for detailed answers!`);
+        } else {
+            alert('❌ No context found. Please make sure you have search results visible on the page first.');
+        }
+
+        console.log('Context chunks found:', contextChunks);
+        return contextChunks;
+    }
+
+    // Force page reset function
+    function forcePageReset() {
+        console.log('🔄 Force page reset triggered...');
+
+        // Clear all results sections
+        const categoryResult = document.getElementById('category-result');
+        const searchResults = document.getElementById('search-results');
+        const chatbotSection = document.getElementById('chatbot-section');
+        const originalDocumentContent = document.getElementById('original-document-content');
+
+        if (categoryResult) {
+            categoryResult.style.display = 'none';
+            categoryResult.innerHTML = '';
+        }
+
+        if (searchResults) {
+            searchResults.style.display = 'none';
+            searchResults.innerHTML = '';
+        }
+
+        if (chatbotSection) {
+            chatbotSection.style.display = 'none';
+        }
+
+        if (originalDocumentContent) {
+            originalDocumentContent.remove();
+        }
+
+        // Reset form
+        const form = document.querySelector('form');
+        if (form) {
+            form.reset();
+        }
+
+        // Clear file input display
+        hideSelectedFileName();
+
+        // Clear chat messages
+        const chatMessages = document.getElementById('chat-messages');
+        if (chatMessages) {
+            chatMessages.innerHTML = '';
+        }
+
+        // Force reload from server (bypass cache)
+        window.location.href = window.location.href + '?reset=' + Date.now();
+
+        console.log('✅ Force page reset completed');
+    }
+</script>
+</body>
+</html>

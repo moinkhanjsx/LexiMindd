@@ -1,0 +1,63 @@
+# ML Model files (downloaded from Google Drive at runtime)
+*.pkl
+*.joblib
+*.h5
+*.model
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Large data files
+*.csv
+*.xlsx
+*.json
+data/
+
+# Test files
+tests/
+test_*.py
+
+# Documentation
+README.md
+docs/
+
+# Deployment
+*.deploy
+deploy/
+
+# Backup files
+*.bak
+*.backup
