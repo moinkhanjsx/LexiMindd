@@ -110,36 +110,57 @@ def get_modellog():
         load_models()
     return _modellog
 
-# -------- Initialize Gemini AI ----------
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-if GEMINI_API_KEY:
+# -------- Initialize Gemini AI (lazy loading) ----------
+_gemini_initialized = False
+_gemini_model = None
+
+def initialize_gemini():
+    """Initialize Gemini AI only when needed"""
+    global _gemini_initialized, _gemini_model
+
+    if _gemini_initialized:
+        return _gemini_model is not None
+
+    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+    if not GEMINI_API_KEY:
+        print("[WARNING] GEMINI_API_KEY not found in environment variables")
+        _gemini_initialized = True
+        return False
+
     try:
         genai.configure(api_key=GEMINI_API_KEY)
         print(f"[INFO] Attempting to initialize Gemini AI with API key: {GEMINI_API_KEY[:10]}...")
 
         # Try different model names in order of preference (updated for current API)
         model_names = ['gemini-1.5-flash', 'gemini-1.5-pro']
-        gemini_model = None
 
         try:
             # Try to create the model without testing it (to avoid quota usage during startup)
-            gemini_model = genai.GenerativeModel(model_names[0])
+            _gemini_model = genai.GenerativeModel(model_names[0])
             print(f"[INFO] Gemini AI model created successfully (without testing)")
+            _gemini_initialized = True
+            return True
         except Exception as e:
             print(f"[WARNING] Failed to initialize Gemini model: {str(e)}")
             print("[WARNING] AI features will be disabled due to quota/API issues")
-            gemini_model = None
+            _gemini_initialized = True
+            return False
     except Exception as e:
         print(f"[ERROR] Failed to configure Gemini AI: {str(e)}")
-        gemini_model = None
-else:
-    print("[WARNING] GEMINI_API_KEY not found in environment variables")
-    gemini_model = None
+        _gemini_initialized = True
+        return False
+
+def get_gemini_model():
+    """Get Gemini model, initializing if needed"""
+    if not _gemini_initialized:
+        initialize_gemini()
+    return _gemini_model
 
 def get_legal_explanation(question, context_chunks, max_retries=3):
     """
     Get legal explanation from Gemini AI using retrieved context.
     """
+    gemini_model = get_gemini_model()
     if not gemini_model:
         return {
             "error": "❌ AI service temporarily unavailable due to quota limits. Please try again later or use the search functionality to find relevant legal cases.",
@@ -468,12 +489,15 @@ def index():
 @app.route("/test-api", methods=["GET"])
 def test_api():
     """Test endpoint to check if Gemini API key is working"""
+    gemini_model = get_gemini_model()
+    api_key = os.getenv('GEMINI_API_KEY')
+
     if not gemini_model:
         return jsonify({
             "success": False,
             "error": "Gemini model not initialized",
-            "api_key_set": GEMINI_API_KEY is not None,
-            "api_key_preview": GEMINI_API_KEY[:10] + "..." if GEMINI_API_KEY else None
+            "api_key_set": api_key is not None,
+            "api_key_preview": api_key[:10] + "..." if api_key else None
         })
 
     try:
